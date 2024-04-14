@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:water_filter/0_data/repositories/repository.dart';
 import 'package:water_filter/1_domain/entities/sales_entities.dart';
+import 'package:water_filter/2_application/core/helpers.dart';
 part 'create_sales_state.dart';
 
 class CreateSalesCubit extends Cubit<CreateSalesCubitState> {
@@ -13,7 +14,14 @@ class CreateSalesCubit extends Cubit<CreateSalesCubitState> {
   Future<void> createSales(SalesEntity sale) async {
     try {
       emit(const CreateSalesStateLoading());
-      final createSales = await firestoreService.createSales(sale);
+      final sales = await firestoreService.getSales();
+
+      final allJobNumbers = sales.map((entity) => entity.jobNumber).toList();
+
+      final highestNumber = getHighestJobNumber(allJobNumbers) + 1;
+
+      final createSales = await firestoreService
+          .createSales(sale.copyWith(jobNumber: 'S0$highestNumber'));
       if (createSales) {
         emit(const CreateSalesStateSaved());
       } else {

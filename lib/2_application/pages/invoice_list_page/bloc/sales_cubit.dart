@@ -7,12 +7,12 @@ part 'sales_state.dart';
 class SalesCubit extends Cubit<SalesCubitState> {
   SalesCubit({required this.firestoreService})
       : super(const SalesStateLoading()) {
-    fetchSales();
+    fetch();
   }
 
   final FirebaseFirestoreService firestoreService;
 
-  Future<void> fetchSales() async {
+  Future<void> fetch() async {
     try {
       emit(const SalesStateLoading());
       final sales = await firestoreService.getSales();

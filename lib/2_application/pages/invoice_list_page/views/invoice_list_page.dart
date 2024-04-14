@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:heroicons/heroicons.dart';
 import 'package:water_filter/2_application/pages/create_invoice_page/views/create_invoice_page.dart';
 import 'package:water_filter/2_application/pages/invoice_list_page/bloc/sales_cubit.dart';
 import 'package:water_filter/2_application/pages/invoice_list_page/widgets/invoice_card.dart';
@@ -27,80 +28,96 @@ class InvoiceListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff1f0f5),
+      backgroundColor: Colors.blueGrey.shade50,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xff0083ff),
         title: const Text(
           'Home',
+          style: TextStyle(color: Colors.white),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          children: [
-            Expanded(
-              child: BlocBuilder<SalesCubit, SalesCubitState>(
-                builder: (context, state) {
-                  if (state is SalesStateLoading) {
-                    return const CircularProgressIndicator(); //ProductPageLoading();
-                  } else if (state is SalesStateLoaded) {
-                    return Scaffold(
-                      body: ListView.builder(
-                        itemCount: state.sales.length,
-                        itemBuilder: (context, index) {
-                          final invoice = state.sales[index];
-                          return InvoiceCard(invoice: invoice);
-                        },
-                      ),
-                      floatingActionButton: FloatingActionButton(
-                        onPressed: () {
-                          context.pushNamed(CreateInvoicePage.name);
-                        },
-                        child: const Icon(Icons.add),
-                      ),
-                    );
-                    // return SalesPageLoaded(
-                    return Text(state.sales.toString());
-                    //   Sales: state.product,
-                    // );
-                  } else if (state is SalesStateError) {
-                    return const Text('error');
-                    // return ProductPageError(
-                    //   onRefresh: () => context.read<SalesCubit>().fetch(),
-                    // );
-                  }
-                  return const SizedBox();
-                },
+      body: RefreshIndicator(
+        color: const Color(0xff0083ff),
+        onRefresh: () => context.read<SalesCubit>().fetch(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            children: [
+              Expanded(
+                child: BlocBuilder<SalesCubit, SalesCubitState>(
+                  builder: (context, state) {
+                    if (state is SalesStateLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xff0083ff),
+                        ),
+                      );
+                    } else if (state is SalesStateLoaded) {
+                      return Scaffold(
+                        backgroundColor: Colors.blueGrey.shade50,
+                        body: state.sales.isEmpty
+                            ? const Center(
+                                child: Text('No sales yet.'),
+                              )
+                            : ListView.builder(
+                                itemCount: state.sales.length,
+                                itemBuilder: (context, index) {
+                                  final invoice = state.sales[index];
+                                  return InvoiceCard(invoice: invoice);
+                                },
+                              ),
+                        floatingActionButton: FloatingActionButton(
+                          backgroundColor: const Color(0xff0083ff),
+                          onPressed: () {
+                            context.pushNamed(CreateInvoicePage.name);
+                          },
+                          child: const HeroIcon(
+                            HeroIcons.plus,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    } else if (state is SalesStateError) {
+                      return SalesListPageError(
+                        onRefresh: () => context.read<SalesCubit>().fetch(),
+                      );
+                    }
+                    return const SizedBox();
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      // body: Padding(
-      //   padding: const EdgeInsets.symmetric(horizontal: 4),
-      //   child: Column(
-      //     children: [
-      //       InvoiceCard(invoice: haha)
-      //       // Expanded(
-      //       //   child: BlocBuilder<SalesCubit, SalesCubitState>(
-      //       //     builder: (context, state) {
-      //       //       if (state is SalesStateLoading) {
-      //       //         return const ProductPageLoading();
-      //       //       } else if (state is SalesStateLoaded) {
-      //       //         return InvoiceListPageLoaded(
-      //       //           Sales: state.product,
-      //       //         );
-      //       //       } else if (state is SalesStateError) {
-      //       //         return ProductPageError(
-      //       //           onRefresh: () => context.read<SalesCubit>().fetch(),
-      //       //         );
-      //       //       }
-      //       //       return const SizedBox();
-      //       //     },
-      //       //   ),
-      //       // ),
-      //     ],
-      //   ),
-      // ),
+    );
+  }
+}
+
+class SalesListPageError extends StatelessWidget {
+  const SalesListPageError({
+    required this.onRefresh,
+    super.key,
+  });
+  final void Function()? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Something went wrong',
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: onRefresh,
+            child: const Text('Refresh'),
+          ),
+        ],
+      ),
     );
   }
 }

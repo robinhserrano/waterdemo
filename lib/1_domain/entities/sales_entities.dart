@@ -1,23 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SalesEntity {
-  final String? id;
-  final String customerName;
-  final String jobNumber;
-  final String jobSubmissionTime;
-  final String leadSource;
-  final String paymentMethod;
-  final String systemDetailsAndNote;
-  final String address; // Assuming 'place' is a string field
-  final num customerContact;
-
-  // Additional fields as needed
-  final num cashReceiving; // Nullable for optional field
-  final num contractFullPrice; // Nullable for optional field
-  final String customerPayment; // Nullable for optional field
-
   const SalesEntity({
-    this.id,
     required this.customerName,
     required this.jobNumber,
     required this.jobSubmissionTime,
@@ -29,10 +13,12 @@ class SalesEntity {
     required this.cashReceiving,
     required this.contractFullPrice,
     required this.customerPayment,
+    this.id,
   });
 
   factory SalesEntity.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> snapshot) {
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+  ) {
     final data = snapshot.data()!;
     return SalesEntity(
       id: snapshot.id,
@@ -49,6 +35,48 @@ class SalesEntity {
       customerPayment: data['customerPayment'] as String,
     );
   }
+  final String? id;
+  final String customerName;
+  final String jobNumber;
+  final String jobSubmissionTime;
+  final String leadSource;
+  final String paymentMethod;
+  final String systemDetailsAndNote;
+  final String address;
+  final num customerContact;
+  final num cashReceiving;
+  final num contractFullPrice;
+  final String customerPayment;
+
+  SalesEntity copyWith({
+    String? id,
+    String? customerName,
+    String? jobNumber,
+    String? jobSubmissionTime,
+    String? leadSource,
+    String? paymentMethod,
+    String? systemDetailsAndNote,
+    String? address,
+    num? customerContact,
+    num? cashReceiving,
+    num? contractFullPrice,
+    String? customerPayment,
+  }) {
+    return SalesEntity(
+      id: id ?? this.id,
+      customerName: customerName ?? this.customerName,
+      jobNumber: jobNumber ?? this.jobNumber,
+      jobSubmissionTime: jobSubmissionTime ?? this.jobSubmissionTime,
+      leadSource: leadSource ?? this.leadSource,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      systemDetailsAndNote: systemDetailsAndNote ?? this.systemDetailsAndNote,
+      address: address ?? this.address,
+      customerContact: customerContact ?? this.customerContact,
+      cashReceiving: cashReceiving ?? this.cashReceiving,
+      contractFullPrice: contractFullPrice ?? this.contractFullPrice,
+      customerPayment: customerPayment ?? this.customerPayment,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -61,11 +89,9 @@ class SalesEntity {
       'systemDetailsAndNote': systemDetailsAndNote,
       'address': address,
       'customerContact': customerContact,
-      if (cashReceiving != null) 'cashReceiving': cashReceiving,
-      if (contractFullPrice != null) 'contractFullPrice': contractFullPrice,
-      if (customerPayment != null) 'customerPayment': customerPayment,
+      'cashReceiving': cashReceiving,
+      'contractFullPrice': contractFullPrice,
+      'customerPayment': customerPayment,
     };
   }
-
-  // Add methods for editing specific fields (e.g., editCashReceiving)
 }

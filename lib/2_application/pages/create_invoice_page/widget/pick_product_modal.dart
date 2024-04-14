@@ -4,7 +4,7 @@ Future<List<String>?> showAssignProductQuantityModal(
   BuildContext context,
   List<String> chosenProducts,
 ) async {
-  List<String> allProducts = [
+  final allProducts = <String>[
     'WAA Full House Healthy Water V2 (w filters)',
     'WAA Healthy Under Sink RO2 (w filters)',
     'WAA Healthy Independent Undersink 6 Stages V1 (w filters)',
@@ -28,7 +28,9 @@ Future<List<String>?> showAssignProductQuantityModal(
         child: ColoredBox(
           color: Colors.transparent,
           child: AssignProductQuantityView(
-              chosenProducts: chosenProducts, allProducts: allProducts),
+            chosenProducts: chosenProducts,
+            allProducts: allProducts,
+          ),
         ),
       ),
     ),
@@ -38,8 +40,8 @@ Future<List<String>?> showAssignProductQuantityModal(
 class AssignProductQuantityView extends StatefulWidget {
   const AssignProductQuantityView({
     required this.chosenProducts,
-    super.key,
     required this.allProducts,
+    super.key,
   });
 
   final List<String> chosenProducts;
@@ -137,11 +139,9 @@ class _AssignProductQuantityViewState extends State<AssignProductQuantityView> {
                                           widget.allProducts[index],
                                         );
                                       } else {
-                                        chosenProducts
-                                          ..clear()
-                                          ..add(
-                                            widget.allProducts[index],
-                                          );
+                                        chosenProducts.add(
+                                          widget.allProducts[index],
+                                        );
                                       }
                                     },
                                   );
@@ -188,7 +188,10 @@ class _AssignProductQuantityViewState extends State<AssignProductQuantityView> {
                     ),
                     child: const Text(
                       'Save',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -202,76 +205,6 @@ class _AssignProductQuantityViewState extends State<AssignProductQuantityView> {
     return const SizedBox.shrink();
   }
 }
-
-// class AssignProductQuantityLoading extends StatelessWidget {
-//   const AssignProductQuantityLoading({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: const BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.all(Radius.circular(20)),
-//       ),
-//       padding: const EdgeInsets.symmetric(vertical: 20),
-//       child: Column(
-//         children: [
-//           const SizedBox(height: 8),
-//           const Center(
-//             child: Text(
-//               'Assign Course to ProductQuantity',
-//               style: TextStyle(fontWeight: FontWeight.w600),
-//             ),
-//           ),
-//           const Padding(
-//             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-//             child: LmsLoadingShimmer(width: double.infinity, height: 60),
-//           ),
-//           const Expanded(
-//             child: Center(
-//               child: CircularProgressIndicator(
-//                 color: Color(0xff7F56D9),
-//               ),
-//             ),
-//           ),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16),
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.end,
-//               children: [
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.of(context, rootNavigator: true).pop();
-//                   },
-//                   style: btnLight,
-//                   child: const Text(
-//                     'Cancel',
-//                     style: TextStyle(
-//                       color: Color(0xff344054),
-//                       fontWeight: FontWeight.w600,
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(width: 12),
-//                 ElevatedButton(
-//                   onPressed: null,
-//                   style: ElevatedButton.styleFrom(
-//                     elevation: 0,
-//                     backgroundColor: const Color(0xff475467),
-//                   ),
-//                   child: const Text(
-//                     'Save',
-//                     style: TextStyle(fontWeight: FontWeight.w600),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 ButtonStyle btnLight = ElevatedButton.styleFrom(
   elevation: 0,

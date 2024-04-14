@@ -1,14 +1,19 @@
-// import 'package:flutter/material.dart';
-// import 'package:sprout_mobile_exam_serrano/1_domain/1_domain/entities/product_details_entity.dart';
-// import 'package:sprout_mobile_exam_serrano/2_application/pages/product_details/widgets/image_slider.dart';
+// ignore: lines_longer_than_80_chars
+// ignore_for_file: avoid_positional_boolean_parameters, inference_failure_on_function_return_type
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:heroicons/heroicons.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:intl/intl.dart';
+import 'package:water_filter/1_domain/entities/product_quantity_entites.dart';
 import 'package:water_filter/1_domain/entities/sales_entities.dart';
+import 'package:water_filter/2_application/core/helpers.dart';
 import 'package:water_filter/2_application/pages/create_invoice_page/bloc/create_sales_cubit.dart';
+import 'package:water_filter/2_application/pages/create_invoice_page/widget/pick_product_modal.dart';
+import 'package:water_filter/2_application/pages/invoice_list_page/views/invoice_list_page.dart';
 import 'package:water_filter/injection.dart';
 
 class CreateInvoicePageWrapperProvider extends StatelessWidget {
@@ -34,20 +39,13 @@ class CreateInvoicePage extends StatefulWidget {
 }
 
 class _CreateInvoicePageState extends State<CreateInvoicePage> {
-  //1
   TextEditingController ctrlCustomerName = TextEditingController();
   TextEditingController ctrlCustomerContact = TextEditingController();
   TextEditingController ctrlAddress = TextEditingController();
-
   TextEditingController ctrlSystemDetailsAndNote = TextEditingController();
-
-  // TextEditingController ctrlCustomerName = TextEditingController();
   TextEditingController ctrlContractFullPrice = TextEditingController();
   TextEditingController ctrlCashReceiving = TextEditingController();
 
-  //2
-
-  //11
   int pageIndex = 0;
   bool isSubmitting = false;
   bool isValidating = false;
@@ -57,39 +55,73 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     'Cash or Online Payment',
   ];
 
+  final List<String> leadSource = [
+    'Self Gen',
+    'Company Lead',
+  ];
+
   String? selectedPaymentType;
+  String? selectedLeadSource;
+
+  List<ProductQuantity> selectedProducts = [];
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<CreateSalesCubit>();
 
-    return Scaffold(
+    return BlocListener<CreateSalesCubit, CreateSalesCubitState>(
+      listener: (context, state) {
+        if (state is CreateSalesStateLoading) {
+          showSavingModal(context);
+        }
+        if (state is CreateSalesStateSaved) {
+          const snackBar = SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Successfully submitted data.'),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+          Navigator.of(context, rootNavigator: true).pop();
+
+          context.pushReplacementNamed(
+            InvoiceListPage.name,
+          );
+        }
+      },
+      child: Scaffold(
+        bottomSheet: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: saveButton(cubit: cubit, context: context),
+        ),
         appBar: AppBar(),
         body: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            children: [
-              Text(pageIndex.toString()),
-              numberStepper(),
-              if (pageIndex == 0) ...[pageOne()],
-              if (pageIndex == 1) ...[pageTwo()],
-              if (pageIndex == 2) ...[pageThree()],
-              const Spacer(),
-              saveButton(cubit: cubit, context: context),
-            ],
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                numberStepper(),
+                if (pageIndex == 0) ...[pageOne()],
+                if (pageIndex == 1) ...[pageTwo()],
+                if (pageIndex == 2) ...[pageThree()],
+              ],
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   Widget pageOne() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         customTextField(
           ctrlCustomerName,
           (value) {
             setState(() {});
           },
-          'Customer Name',
+          'Name',
           isValidating,
           TextInputType.text,
         ),
@@ -98,9 +130,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           (value) {
             setState(() {});
           },
-          'Customer Contact',
+          'Contact',
           isValidating,
-          TextInputType.number,
+          TextInputType.phone,
         ),
         customTextField(
           ctrlAddress,
@@ -111,25 +143,131 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           isValidating,
           TextInputType.text,
         ),
+        const Text(
+          'Lead Source',
+          style: TextStyle(fontSize: 16),
+        ),
+        const SizedBox(
+          height: 4,
+        ),
+        DropdownButtonFormField2(
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+          isExpanded: true,
+          hint: const Text('Select Lead Source'),
+          value: selectedLeadSource == null
+              ? null
+              : leadSource[leadSource.indexOf(
+                  selectedLeadSource!,
+                )],
+          items: leadSource
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: const TextStyle(
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedLeadSource = value;
+            });
+          },
+          buttonStyleData: const ButtonStyleData(
+            height: 60,
+            padding: EdgeInsets.only(left: 20, right: 10),
+          ),
+          iconStyleData: const IconStyleData(
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color: Colors.black45,
+            ),
+            iconSize: 30,
+          ),
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+            ),
+          ),
+        ),
+        if (isValidating && selectedLeadSource == null) ...[
+          const Text(
+            'Please select lead source',
+            style: TextStyle(color: Colors.red),
+          ),
+        ],
       ],
     );
   }
 
   Widget pageTwo() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        customTextField(
-          ctrlSystemDetailsAndNote,
-          (value) {
-            setState(() {});
-          },
-          'Detail',
-          isValidating,
-          TextInputType.text,
+        Row(
+          children: [
+            const Spacer(),
+            ElevatedButton.icon(
+              icon: const HeroIcon(
+                HeroIcons.plus,
+                color: Colors.black87,
+              ),
+              onPressed: () async {
+                if (context.mounted) {
+                  final productNames =
+                      selectedProducts.map((pq) => pq.product).toList();
+
+                  final datas = await showAssignProductQuantityModal(
+                    context,
+                    productNames,
+                  );
+                  if (datas != null) {
+                    setState(() {
+                      for (final data in datas) {
+                        if (!productNames.contains(data)) {
+                          selectedProducts.add(ProductQuantity(data, 1));
+                        }
+                      }
+
+                      for (var i = selectedProducts.length - 1; i >= 0; i--) {
+                        if (!datas.contains(selectedProducts[i].product)) {
+                          selectedProducts.removeAt(i);
+                        }
+                      }
+                    });
+                  }
+                }
+              },
+              label: const Text(
+                'Add Product',
+                style: TextStyle(color: Colors.black87),
+              ),
+            ),
+          ],
         ),
-        ElevatedButton(onPressed: () {
-         // showAssignProductQuantityModal()
-        }, child: const Text('Add Product'))
+        const SizedBox(
+          height: 8,
+        ),
+        if (isValidating && selectedProducts.isEmpty) ...[
+          const Center(
+            child: Text(
+              'Please select atleast one product',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+        productList(selectedProducts),
       ],
     );
   }
@@ -138,15 +276,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // customTextField(
-        //   ctrlCustomerName,
-        //   (value) {
-        //     setState(() {});
-        //   },
-        //   'Payment Method',
-        //   isValidating,
-        //   TextInputType.text,
-        // ),
         customTextField(
           ctrlContractFullPrice,
           (value) {
@@ -216,7 +345,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         ),
         if (isValidating && selectedPaymentType == null) ...[
           const Text(
-            'Please select payment method.',
+            'Please select payment type.',
             style: TextStyle(color: Colors.red),
           ),
         ],
@@ -236,6 +365,101 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     );
   }
 
+  Widget productList(List<ProductQuantity> selectedProducts) {
+    return Column(
+      children: [
+        ...selectedProducts.map(
+          (
+            product,
+          ) =>
+              Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(product.product),
+              const SizedBox(
+                height: 8,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 24,
+                    child: TextButton(
+                      onPressed: () {
+                        if (product.quantity > 1) {
+                          setState(() {
+                            product.quantity--;
+                          });
+                        } else {
+                          showDeleteProductModal(context, product.product, () {
+                            setState(() {
+                              selectedProducts.removeWhere(
+                                (e) => e.product == product.product,
+                              );
+                            });
+
+                            Navigator.of(context, rootNavigator: true).pop();
+                          });
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        shadowColor: Colors.grey.withOpacity(0.5),
+                        elevation: 2,
+                      ),
+                      child: HeroIcon(
+                        HeroIcons.minus,
+                        color: Colors.grey.shade600,
+                        style: HeroIconStyle.outline,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(product.quantity.toString()),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 32,
+                    height: 24,
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          product.quantity++;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        shadowColor: Colors.grey.withOpacity(0.5),
+                        elevation: 2,
+                      ),
+                      child: HeroIcon(
+                        HeroIcons.plus,
+                        color: Colors.grey.shade600,
+                        style: HeroIconStyle.outline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Divider(),
+              )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget saveButton({
     required CreateSalesCubit cubit,
     required BuildContext context,
@@ -248,36 +472,60 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             ? null
             : () async {
                 if (pageIndex == 2) {
-                  cubit.createSales(
-                    SalesEntity(
-                        id: null,
+                  if (ctrlCashReceiving.text.isNotEmpty &&
+                      ctrlContractFullPrice.text.isNotEmpty &&
+                      selectedPaymentType != null) {
+                    final customerPayment =
+                        double.parse(ctrlCashReceiving.text) <= 0
+                            ? 'Unpaid'
+                            : double.parse(ctrlCashReceiving.text) <
+                                    double.parse(ctrlContractFullPrice.text)
+                                ? 'Partial'
+                                : 'Paid';
+
+                    await cubit.createSales(
+                      SalesEntity(
                         customerName: ctrlCustomerName.text,
-                        jobNumber: '9999', //do this
+                        jobNumber: '',
                         jobSubmissionTime: DateFormat('yyyy-MM-dd HH:mm:ss')
                             .format(DateTime.now()),
-                        leadSource: 'leadSource', //do this dropdown
-                        paymentMethod: 'paymentMethod', //dropdown
+                        leadSource: selectedLeadSource ?? 'Self Gen',
+                        paymentMethod: selectedPaymentType!,
                         systemDetailsAndNote:
-                            'systemDetailsAndNote', //effing do this
+                            formatProductQuantities(selectedProducts),
                         address: ctrlAddress.text,
                         customerContact: int.parse(ctrlCustomerContact.text),
                         cashReceiving: double.parse(ctrlCashReceiving.text),
                         contractFullPrice:
                             double.parse(ctrlContractFullPrice.text),
-                        customerPayment: 'paid'),
-                  );
+                        customerPayment: customerPayment,
+                      ),
+                    );
+                  } else {
+                    setState(() {
+                      isValidating = true;
+                    });
+                  }
                 }
 
                 if (pageIndex == 1) {
-                  setState(() {
-                    pageIndex = 2;
-                  });
+                  if (selectedProducts.isNotEmpty) {
+                    setState(() {
+                      isValidating = false;
+                      pageIndex = 2;
+                    });
+                  } else {
+                    setState(() {
+                      isValidating = true;
+                    });
+                  }
                 }
 
                 if (pageIndex == 0) {
                   if (ctrlCustomerName.text.isNotEmpty &&
                       ctrlCustomerContact.text.isNotEmpty &&
-                      ctrlAddress.text.isNotEmpty) {
+                      ctrlAddress.text.isNotEmpty &&
+                      selectedLeadSource != null) {
                     setState(() {
                       isValidating = false;
                       pageIndex = 1;
@@ -305,35 +553,72 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 
   Widget numberStepper() {
-    return NumberStepper(
-      onStepReached: (number) {
-        setState(() {
-          pageIndex = number;
-        });
-      },
-      activeStep: pageIndex,
-      activeStepBorderColor: const Color(0xff7F56D9).withOpacity(0.25),
-      activeStepBorderWidth: 4,
-      stepRadius: 16,
-      numberStyle: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
-      activeStepColor: const Color(0xff7F56D9),
-      stepColor: const Color(0xff7F56D9).withOpacity(0.25),
-      enableNextPreviousButtons: false,
-      lineColor: const Color(0xffEEF1F4),
-      stepReachedAnimationEffect: Curves.linear,
-      numbers: const [1, 2, 3],
-      enableStepTapping: false,
-      // enableStepTapping: ctrlCourseTitle.text.isNotEmpty &&
-      //     ctrlCourseDescription.text.isNotEmpty,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        NumberStepper(
+          onStepReached: (number) {
+            setState(() {
+              if (number < pageIndex) {
+                pageIndex = number;
+              } else {
+                if (number == 2 && selectedProducts.isNotEmpty) {
+                  isValidating = false;
+                  pageIndex = number;
+                } else if (number == 1 &&
+                    ctrlCustomerName.text.isNotEmpty &&
+                    ctrlCustomerContact.text.isNotEmpty &&
+                    ctrlAddress.text.isNotEmpty &&
+                    selectedLeadSource != null) {
+                  isValidating = false;
+                  pageIndex = number;
+                } else {
+                  isValidating = true;
+                }
+              }
+            });
+          },
+          activeStep: pageIndex,
+          activeStepBorderColor: const Color(0xff0083ff).withOpacity(0.25),
+          activeStepBorderWidth: 4,
+          stepRadius: 16,
+          numberStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+          activeStepColor: const Color(0xff0083ff),
+          stepColor: const Color(0xff0083ff).withOpacity(0.25),
+          enableNextPreviousButtons: false,
+          lineColor: const Color(0xffEEF1F4),
+          stepReachedAnimationEffect: Curves.linear,
+          numbers: const [1, 2, 3],
+        ),
+        Text(
+          pageIndex == 0
+              ? 'Customer Information'
+              : pageIndex == 1
+                  ? 'Job Detail'
+                  : pageIndex == 2
+                      ? 'Payment'
+                      : '',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }
 
-Widget customTextField(TextEditingController ctrl, Function(String) onChanged,
-    String title, bool isValidating, TextInputType? inputType) {
+Widget customTextField(
+  TextEditingController ctrl,
+  Function(String) onChanged,
+  String title,
+  bool isValidating,
+  TextInputType? inputType,
+) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -350,6 +635,7 @@ Widget customTextField(TextEditingController ctrl, Function(String) onChanged,
         enableSuggestions: false,
         autocorrect: false,
         decoration: InputDecoration(
+          prefixText: inputType == TextInputType.number ? r'$' : null,
           border: const OutlineInputBorder(),
           enabledBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: Colors.grey, width: 0),
@@ -373,12 +659,101 @@ Widget customTextField(TextEditingController ctrl, Function(String) onChanged,
   );
 }
 
-class ProductQuantity {
-  final String product;
-  final double quantity;
+Future<void> showSavingModal(
+  BuildContext context,
+) {
+  return showDialog(
+    barrierColor: Colors.black.withOpacity(0.3),
+    context: context,
+    builder: (BuildContext dialogCon) => AlertDialog(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      title: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          CircularProgressIndicator(
+            color: Color(0xff0083ff),
+          ),
+          Text(
+            'Submitting Data',
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
-  const ProductQuantity({
-    required this.product,
-    required this.quantity,
-  });
+Future<void> showDeleteProductModal(
+  BuildContext context,
+  String productName,
+  void Function()? onPressed,
+) {
+  return showDialog(
+    barrierColor: Colors.black.withOpacity(0.3),
+    context: context,
+    builder: (BuildContext dialogCon) => AlertDialog(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      title: Column(
+        children: [
+          const Text(
+            'Remove Product',
+            style: TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Are you sure you want to remove $productName?',
+            style: const TextStyle(fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xffB3B7C2),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Color(0xffFFFFFF),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xffD92D20),
+                  ),
+                  child: const Text(
+                    'Delete',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

@@ -1,12 +1,16 @@
+import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:heroicons/heroicons.dart';
+import 'package:water_filter/1_domain/entities/product_quantity_entites.dart';
 import 'package:water_filter/1_domain/entities/sales_entities.dart';
+import 'package:water_filter/2_application/core/helpers.dart';
 import 'package:water_filter/2_application/pages/invoice_detail_page/bloc/sales_detail_cubit.dart';
 import 'package:water_filter/injection.dart';
 
 class SalesDetailPageWrapperProvider extends StatelessWidget {
-  const SalesDetailPageWrapperProvider({super.key, required this.id});
+  const SalesDetailPageWrapperProvider({required this.id, super.key});
   final String id;
   @override
   Widget build(BuildContext context) {
@@ -20,7 +24,7 @@ class SalesDetailPageWrapperProvider extends StatelessWidget {
 }
 
 class InvoiceDetailPage extends StatefulWidget {
-  const InvoiceDetailPage({super.key, required this.id});
+  const InvoiceDetailPage({required this.id, super.key});
 
   static const name = 'salesDetail';
   static const path = '/salesDetail/:id';
@@ -41,14 +45,24 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: const Color(0xff0083ff),
+        title: const Text(
+          'Detail',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
             child: BlocBuilder<SalesDetailCubit, SalesDetailCubitState>(
               builder: (context, state) {
                 if (state is SalesDetailStateLoading) {
-                  return const CircularProgressIndicator();
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xff0083ff),
+                    ),
+                  );
                 } else if (state is SalesDetailStateLoaded) {
                   return InvoiceDetailPageLoaded(invoice: state.salesDetail);
                 } else if (state is SalesDetailStateError) {
@@ -65,20 +79,18 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 }
 
 class InvoiceDetailPageLoaded extends StatelessWidget {
-  const InvoiceDetailPageLoaded({super.key, required this.invoice});
+  const InvoiceDetailPageLoaded({required this.invoice, super.key});
 
   final SalesEntity invoice;
 
   @override
   Widget build(BuildContext context) {
-    String formattedText = invoice.systemDetailsAndNote
-        .replaceAll(RegExp(r"\.0\n"), "\n\tQty: 1.0\n")
-        .replaceAll(r"<p>", "")
-        .replaceAll(r"</p>", "");
+    final parsedData = parseProductQuantities(invoice.systemDetailsAndNote);
 
     return Container(
       padding: const EdgeInsets.all(8),
       child: Card(
+        color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -88,121 +100,297 @@ class InvoiceDetailPageLoaded extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    invoice.jobSubmissionTime.split(' ')[0],
-                    style: const TextStyle(color: Color(0xff7a7a7a)),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    20,
                   ),
-                  const Text(
-                    ' - ',
-                    style: TextStyle(color: Color(0xff7a7a7a)),
+                  border: Border.all(
+                    color: invoice.customerPayment.toLowerCase() == 'unpaid'
+                        ? Colors.red
+                        : invoice.customerPayment.toLowerCase() == 'partial'
+                            ? Colors.orange
+                            : Colors.green,
                   ),
-                  Text(
-                    '#${invoice.jobNumber}',
-                    style: const TextStyle(color: Color(0xff7a7a7a)),
+                ),
+                child: Text(
+                  capitalizeFirstLetter(invoice.customerPayment),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: invoice.customerPayment.toLowerCase() == 'unpaid'
+                        ? Colors.red
+                        : invoice.customerPayment.toLowerCase() == 'partial'
+                            ? Colors.orange
+                            : Colors.green,
                   ),
-                ],
+                ),
               ),
+              const SizedBox(height: 8),
               Text(
-                invoice.customerName,
-                style: const TextStyle(fontSize: 16),
+                '#${invoice.jobNumber}',
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              Text(invoice.address,
-                  style: const TextStyle(color: Color(0xff7a7a7a))),
+
+              Text(
+                'Job Submission Time: '
+                '${invoice.jobSubmissionTime}',
+                style: const TextStyle(color: Color(0xff7a7a7a), fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Customer Info',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Row(
+                        children: [
+                          const HeroIcon(
+                            HeroIcons.user,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(
+                            width: 4,
+                          ),
+                          Expanded(
+                            child: Text(
+                              invoice.customerName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          const HeroIcon(
+                            HeroIcons.phone,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(
+                            width: 4,
+                          ),
+                          Expanded(
+                            child: Text(
+                              invoice.customerContact.toString(),
+                              style: const TextStyle(
+                                color: Color(0xff7a7a7a),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          const HeroIcon(
+                            HeroIcons.mapPin,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(
+                            width: 4,
+                          ),
+                          Expanded(
+                            child: Text(
+                              invoice.address,
+                              style: const TextStyle(
+                                color: Color(0xff7a7a7a),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // const CircleAvatar(
+                      //   backgroundColor: Color(0xfff5faff),
+                      //   child: HeroIcon(
+                      //     HeroIcons.user,
+                      //     color: Colors.blue,
+                      //     style: HeroIconStyle.solid,
+                      //   ),
+                      // ),
+                      // const SizedBox(
+                      //   width: 12,
+                      // ),
+                      // Expanded(
+                      //   child: Column(
+                      //     crossAxisAlignment: CrossAxisAlignment.start,
+                      //     children: [
+
+                      //     ],
+                      //   ),
+                      // )
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 8,
+              ),
               Card(
                 color: const Color(0xfff5faff),
-                child: Text(invoice.systemDetailsAndNote),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Job Details',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: DottedLine(
+                          lineThickness: 1.5,
+                          dashColor: Color(0xffadadad),
+                          dashLength: 8,
+                        ),
+                      ),
+                      if (parsedData.isNotEmpty) ...[
+                        Column(
+                          children: [
+                            ...parsedData.map(
+                              (
+                                product,
+                              ) =>
+                                  Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.product,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'Qty: ${product.quantity}',
+                                        style: const TextStyle(
+                                          color: Color(0xff7a7a7a),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        HtmlWidget(
+                          invoice.systemDetailsAndNote,
+                        ),
+                      ],
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      const Text(
+                        'Payment Details',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: DottedLine(
+                          lineThickness: 1.5,
+                          dashColor: Color(0xffadadad),
+                          dashLength: 8,
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Payment Method',
+                              ),
+                              const Spacer(),
+                              Text(
+                                '\$${invoice.paymentMethod}',
+                                style: const TextStyle(
+                                  color: Color(0xff7a7a7a),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 8,
+                          ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Contract Full Price',
+                              ),
+                              const Spacer(),
+                              Text(
+                                '\$${invoice.contractFullPrice}',
+                                style: const TextStyle(
+                                  color: Color(0xff7a7a7a),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 8,
+                          ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Cash Receiving',
+                              ),
+                              const Spacer(),
+                              Text(
+                                '\$${invoice.cashReceiving}',
+                                style: const TextStyle(
+                                  color: Color(0xff7a7a7a),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
-              HtmlWidget(
-                invoice.systemDetailsAndNote,
-              ),
-              Text(formattedText),
-
-              // Expanded(
-              //   child: ClipRRect(
-              //     borderRadius: BorderRadius.circular(8),
-              //     child: Image.network(
-              //       invoice.thumbnail,
-              //       width: double.infinity,
-              //       fit: BoxFit.cover,
-              //     ),
-              //   ),
-              // ),
-              const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Text(
-                    //   invoice.title,
-                    //   maxLines: 2,
-                    //   overflow: TextOverflow.ellipsis,
-                    //   style: const TextStyle(fontWeight: FontWeight.w400),
-                    // ),
-                    // const SizedBox(height: 4),
-                    // Row(
-                    //   children: [
-                    //     Text(
-                    //       r'$' +
-                    //           (invoice.price -
-                    //                   (invoice.price *
-                    //                       (invoice.discountPercentage / 100)))
-                    //               .toStringAsFixed(2),
-                    //       style: const TextStyle(
-                    //         color: Color(0xfffa455f),
-                    //         fontWeight: FontWeight.w600,
-                    //       ),
-                    //     ),
-                    //     const SizedBox(
-                    //       width: 4,
-                    //     ),
-                    //     Text(
-                    //       '\$${invoice.price}',
-                    //       style: const TextStyle(
-                    //         decoration: TextDecoration.lineThrough,
-                    //         decorationColor: Colors.grey,
-                    //         color: Colors.grey,
-                    //         fontWeight: FontWeight.w600,
-                    //       ),
-                    //     ),
-                    //     const SizedBox(
-                    //       width: 4,
-                    //     ),
-                    //     Container(
-                    //       padding: const EdgeInsets.symmetric(
-                    //         vertical: 2,
-                    //         horizontal: 1.5,
-                    //       ),
-                    //       decoration: BoxDecoration(
-                    //         color: Colors.red.withOpacity(0.1),
-                    //         borderRadius: BorderRadius.circular(32),
-                    //       ),
-                    //       child: Text(
-                    //         '-${invoice.discountPercentage.toInt()}%',
-                    //         style: const TextStyle(
-                    //           color: Color(0xfffa455f),
-                    //           fontWeight: FontWeight.w700,
-                    //           fontSize: 10,
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-                    // Text(
-                    //   'Stock: ${invoice.stock} Left',
-                    //   style: const TextStyle(
-                    //     color: Colors.blueGrey,
-                    //     fontSize: 12,
-                    //   ),
-                    // ),
-                  ],
-                ),
-              ),
+              //ADD
             ],
           ),
         ),
