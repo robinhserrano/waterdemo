@@ -1,16 +1,18 @@
 # water_filter
 
-A new Flutter project.
+[![analyze](https://github.com/robinhserrano/sprout-product-demo-app/actions/workflows/analyze.yml/badge.svg?branch=main)](https://github.com/robinhserrano/sprout-product-demo-app/blob/main/.github/workflows/analyze.yml)
+[![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 
-## Getting Started
+| Dependency  | Version Used |
+| --- | --- |
+| Flutter | 3.19.2 stable |
+| Dart | 3.3.0 |
+| Xcode | 15 or later |
 
-This project is a starting point for a Flutter application.
+Steps to run: 
+- flutter pub get
+- flutter pub run build_runner build --delete-conflicting-outputs
+- flutter run
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Important links
+- https://github.com/robinhserrano/waterdemo
