@@ -23,4 +23,9 @@ class SalesCubit extends Cubit<SalesCubitState> {
       emit(SalesStateError(message: e.toString()));
     }
   }
+
+  Future<bool> deleteById(String id) async {
+    final sales = await firestoreService.deleteSaleById(id);
+    return sales;
+  }
 }

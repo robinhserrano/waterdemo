@@ -64,7 +64,10 @@ class InvoiceListPage extends StatelessWidget {
                                 itemCount: state.sales.length,
                                 itemBuilder: (context, index) {
                                   final invoice = state.sales[index];
-                                  return InvoiceCard(invoice: invoice);
+                                  return InvoiceCard(
+                                    invoice: invoice,
+                                    cubit: context.read<SalesCubit>(),
+                                  );
                                 },
                               ),
                         floatingActionButton: FloatingActionButton(

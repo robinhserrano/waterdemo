@@ -29,25 +29,19 @@ class FirebaseFirestoreService {
     if (docSnapshot.exists) {
       return SalesEntity.fromFirestore(docSnapshot);
     } else {
-      return null; // Handle case where document not found
+      return null;
     }
   }
 
-  // Future<void> updateJob(String jobId, SalesEntity updatedJob) async {
-  //   try {
-  //     final docRef = _firestore.collection(_collectionPath).doc(jobId);
-  //     await docRef.update(updatedJob.toJson());
-  //   } on FirebaseException catch (e) {
-  //     throw Exception('Failed to update job: ${e.message}');
-  //   }
-  // }
-
-  Future<void> deleteJob(String jobId) async {
+  Future<bool> deleteSaleById(String saleId) async {
     try {
-      final docRef = _firestore.collection(_collectionPath).doc(jobId);
+      final docRef = _firestore.collection(_collectionPath).doc(saleId);
       await docRef.delete();
+      return true;
     } on FirebaseException catch (e) {
       throw Exception('Failed to delete job: ${e.message}');
+    } catch (_) {
+      return false;
     }
   }
 }

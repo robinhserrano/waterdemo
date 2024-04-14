@@ -66,7 +66,10 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 } else if (state is SalesDetailStateLoaded) {
                   return InvoiceDetailPageLoaded(invoice: state.salesDetail);
                 } else if (state is SalesDetailStateError) {
-                  return const Text('error');
+                  return DetailPageError(
+                    onRefresh: () => context.read<SalesDetailCubit>()
+                      ..fetchSalesDetail(widget.id),
+                  );
                 }
                 return const SizedBox();
               },
@@ -132,14 +135,21 @@ class InvoiceDetailPageLoaded extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-
               Text(
                 'Job Submission Time: '
                 '${invoice.jobSubmissionTime}',
                 style: const TextStyle(color: Color(0xff7a7a7a), fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Lead Source: ${invoice.leadSource}',
+                style: const TextStyle(
+                  color: Color(0xff7a7a7a),
+                  fontSize: 12,
+                ),
               ),
               const SizedBox(height: 8),
               Card(
@@ -227,26 +237,6 @@ class InvoiceDetailPageLoaded extends StatelessWidget {
                           ),
                         ],
                       ),
-
-                      // const CircleAvatar(
-                      //   backgroundColor: Color(0xfff5faff),
-                      //   child: HeroIcon(
-                      //     HeroIcons.user,
-                      //     color: Colors.blue,
-                      //     style: HeroIconStyle.solid,
-                      //   ),
-                      // ),
-                      // const SizedBox(
-                      //   width: 12,
-                      // ),
-                      // Expanded(
-                      //   child: Column(
-                      //     crossAxisAlignment: CrossAxisAlignment.start,
-                      //     children: [
-
-                      //     ],
-                      //   ),
-                      // )
                     ],
                   ),
                 ),
@@ -383,17 +373,60 @@ class InvoiceDetailPageLoaded extends StatelessWidget {
                               ),
                             ],
                           ),
+                          const SizedBox(
+                            height: 8,
+                          ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Cash Amount Owed',
+                              ),
+                              const Spacer(),
+                              Text(
+                                // ignore: lines_longer_than_80_chars
+                                '\$${invoice.contractFullPrice - invoice.cashReceiving}',
+                                style: const TextStyle(
+                                  color: Color(0xff7a7a7a),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
               ),
-
-              //ADD
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class DetailPageError extends StatelessWidget {
+  const DetailPageError({
+    required this.onRefresh,
+    super.key,
+  });
+  final void Function()? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Something went wrong',
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: onRefresh,
+            child: const Text('Refresh'),
+          ),
+        ],
       ),
     );
   }

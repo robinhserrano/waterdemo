@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart';
+
 String capitalizeFirstLetter(String text) {
   if (text.isEmpty) return text;
 
@@ -19,4 +21,30 @@ int getHighestJobNumber(List<String> jobNumbers) {
   }
 
   return numbers.reduce(math.max);
+}
+
+class NumberTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final newText = newValue.text;
+    final regExp = RegExp(r'^[0-9]+([0-9]?)?$');
+    if (regExp.hasMatch(newText)) {
+      return newValue;
+    }
+    return oldValue;
+  }
+}
+
+class DoubleInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final newText = newValue.text;
+    final regExp = RegExp(r'^[0-9]+([.][0-9]{2,})?$');
+    if (regExp.hasMatch(newText)) {
+      return newValue;
+    }
+    return oldValue;
+  }
 }

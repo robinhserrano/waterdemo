@@ -634,6 +634,10 @@ Widget customTextField(
         controller: ctrl,
         enableSuggestions: false,
         autocorrect: false,
+        inputFormatters: [
+          if (inputType == TextInputType.phone) ...[NumberTextInputFormatter()],
+          if (inputType == TextInputType.number) ...[DoubleInputFormatter()],
+        ],
         decoration: InputDecoration(
           prefixText: inputType == TextInputType.number ? r'$' : null,
           border: const OutlineInputBorder(),
